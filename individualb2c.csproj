@@ -4,6 +4,7 @@
      <UserSecretsId>9a3afc6c-6a76-4e37-be88-1b85b4bc8b81</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
     <PackageReference Include="Microsoft.Identity.Web" Version="1.*" />
     <PackageReference Include="Microsoft.Identity.Web.UI" Version="1.*" />
   </ItemGroup>
