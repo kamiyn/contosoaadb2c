@@ -112,3 +112,6 @@ UpgradeLog*.XML
 .vs/
 node_modules/
 .nuxt/
+Properties/PublishProfiles/
+Properties/ServiceDependencies/
+Deploy/secrets.json
