@@ -1,19 +1,12 @@
 #!/bin/sh
-subscriptionId="c354e14c-1404-4331-a739-bd0f1f1dbcc1"
-resourceGroupName="rg-contosocirclepay"
-baseName="contosocirclepay"
-
-# create name with convention
-if [ -z "$AZRANDSUFFIX" ]; then
-  echo please set AZRANDSUFFIX environment variable
-  echo export AZRANDSUFFIX=abcd
+if [ -z "$AZDEPLOY_SUBSCRIPTIONID" -o  -z "$AZDEPLOY_RESOURCEGROUPNAME" ]; then
+  echo please set subscriptionId environment variable
   exit
 fi
-keyVaultName="kv-$baseName-${AZRANDSUFFIX}"
-appserviceName="app-$baseName-${AZRANDSUFFIX}"
 
-# do
-az account set --subscription $subscriptionId
+# after Configure AzureB2C, 
+# update variables AzureAdB2C section in secrets.json
+# and run this script
 
 # https://docs.microsoft.com/ja-jp/azure/app-service/app-service-key-vault-references
 # @Microsoft.KeyVault(SecretUri=https://$(cval))
@@ -24,8 +17,8 @@ useKeyVault () {
     cname=$1
     cnameKeyVault=$2
     secretval=$3
-    cval=`az keyvault secret set --name $cnameKeyVault --vault-name $keyVaultName --value $secretval | jq -r .id`
-    az webapp config appsettings set -g $resourceGroupName --name $appserviceName --settings "$cname=@Microsoft.KeyVault(SecretUri=$cval)"
+    cval=`az keyvault secret set --name $cnameKeyVault --vault-name $AZDEPLOY_KEYVAULTNAME --value $secretval --query id -o tsv`
+    az webapp config appsettings set -g $AZDEPLOY_RESOURCEGROUPNAME --name $AZDEPLOY_APPSERVICENAME --settings "$cname=@Microsoft.KeyVault(SecretUri=$cval)"
 }
 
 # それぞれの値を実行時に変更する

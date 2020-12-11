@@ -1,36 +1,22 @@
 #!/bin/sh
-subscriptionId="c354e14c-1404-4331-a739-bd0f1f1dbcc1"
-resourceGroupName="rg-contosocirclepay"
-Location="westus2"
-baseName="contosocirclepay"
-
-# create name with convention
-if [ -z "$AZRANDSUFFIX" ]; then
-  echo please set AZRANDSUFFIX environment variable
-  echo export AZRANDSUFFIX=abcd
+if [ -z "$AZDEPLOY_SUBSCRIPTIONID" -o  -z "$AZDEPLOY_RESOURCEGROUPNAME" ]; then
+  echo please set subscriptionId environment variable
   exit
 fi
-keyVaultName="kv-$baseName-${AZRANDSUFFIX}"
-keyVaultGroup=$resourceGroupName
-appservicePlanName="plan-$baseName-${AZRANDSUFFIX}"
-appserviceName="app-$baseName-${AZRANDSUFFIX}"
-applicationInsightsName="appi-$baseName-${AZRANDSUFFIX}"
 
-# do
-az account set --subscription $subscriptionId
-az configure --defaults group=$resourceGroupName location=$Location
+az keyvault create --location $AZDEPLOY_LOCATION --name $AZDEPLOY_KEYVAULTNAME --resource-group $AZDEPLOY_RESOURCEGROUPNAME
 
-az keyvault create --location $Location --name $keyVaultName --resource-group $resourceGroupName
+az appservice plan create --location $AZDEPLOY_LOCATION -g $AZDEPLOY_RESOURCEGROUPNAME -n $AZDEPLOY_APPSERVICEPLANNAME --sku P1V3
+az appservice plan update -g $AZDEPLOY_RESOURCEGROUPNAME -n $AZDEPLOY_APPSERVICEPLANNAME --sku S1
 
-az appservice plan create --location $Location -g $resourceGroupName -n $appservicePlanName --sku P1V3
-az webapp create -g $resourceGroupName -p $appservicePlanName -n $appserviceName
+az webapp create -g $AZDEPLOY_RESOURCEGROUPNAME -p $AZDEPLOY_APPSERVICEPLANNAME -n $AZDEPLOY_APPSERVICENAME
 
-az webapp update --name $appserviceName \
+az webapp update --name $AZDEPLOY_APPSERVICENAME \
                  --client-affinity-enabled false \
                  --https-only true \
                  --verbose
 
-az webapp config set --name $appserviceName \
+az webapp config set --name $AZDEPLOY_APPSERVICENAME \
                      --always-on true \
                      --auto-heal-enabled true \
                      --ftps-state Disabled \
@@ -44,11 +30,14 @@ az webapp config set --name $appserviceName \
                      --web-sockets-enabled false \
                      --verbose
 
-az webapp config appsettings set --name $appserviceName --settings @appsettings.json
+az webapp config appsettings set --name $AZDEPLOY_APPSERVICENAME --settings @appsettings.json
 
 # keyvault
-principalId=`az webapp identity assign --name $appserviceName --resource-group $resourceGroupName -o tsv --query principalId`
-az keyvault set-policy --name $keyVaultName --resource-group $keyVaultGroup \
+principalId=`az webapp identity assign --name $AZDEPLOY_APPSERVICENAME --resource-group $AZDEPLOY_RESOURCEGROUPNAME -o tsv --query principalId`
+az keyvault set-policy --name $AZDEPLOY_KEYVAULTNAME --resource-group $AZDEPLOY_KEYVAULTGROUP \
                        --object-id $principalId \
                        --secret-permissions Get List \
                        --verbose
+
+cval=`az monitor app-insights component create --app $AZDEPLOY_APPSERVICENAME --location $AZDEPLOY_LOCATION --kind web -g $AZDEPLOY_RESOURCEGROUPNAME --application-type web --query connectionString -o tsv`
+az webapp config appsettings set -g $AZDEPLOY_RESOURCEGROUPNAME --name $AZDEPLOY_APPSERVICENAME --settings "APPLICATIONINSIGHTS_CONNECTION_STRING=$cval"
