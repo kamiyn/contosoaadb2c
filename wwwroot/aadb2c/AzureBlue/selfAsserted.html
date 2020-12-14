@@ -1,5 +1,4 @@
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     
@@ -140,5 +139,14 @@
             </div>
         </div>
     </div>
+<script>
+// jQueryによって読み込まれるHTMLファイルのため document.addEventListener("DOMContentLoaded"... は使わない
+    console.log('selfAsserted loaded');
+    var elemEmail = document.getElementById("email");
+    if ( elemEmail != null ) {
+        console.log('modifying object email');
+        elemEmail.value = location.hash;
+    }
+</script>
 </body>
 </html>
